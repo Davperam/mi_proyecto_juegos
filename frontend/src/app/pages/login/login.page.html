@@ -1,0 +1,35 @@
+<ion-content class="ion-padding" style="--background: #f4f5f8;">
+  <div style="max-width: 450px; margin: 40px auto;">
+    <ion-card>
+      <ion-card-header style="text-align: center;">
+        <ion-card-title color="primary">Juegos Educativos</ion-card-title>
+        <p>Acceso a la plataforma de aprendizaje</p>
+      </ion-card-header>
+
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Correo Electrónico</ion-label>
+          <ion-input [(ngModel)]="email" type="email" placeholder="usuario@escuela.edu"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Contraseña</ion-label>
+          <ion-input [(ngModel)]="password" type="password" placeholder="••••••••"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Ingresar como</ion-label>
+          <ion-select [(ngModel)]="rol">
+            <ion-select-option value="maestro">Maestro / Profesor</ion-select-option>
+            <ion-select-option value="alumno">Alumno / Estudiante</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <br />
+        <ion-button expand="block" color="primary" (click)="iniciarSesion()">
+          Iniciar Sesión
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

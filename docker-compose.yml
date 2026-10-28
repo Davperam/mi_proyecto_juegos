@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # 1. Base de Datos MariaDB
+  database:
+    image: mariadb:10.11
+    container_name: mariadb_juegos
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "220807"
+      MYSQL_DATABASE: juego_educativo
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - app_network
+
+  # 2. Backend API Node.js Express
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: api_express
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - PORT=3000
+      - DB_HOST=database
+      - DB_USER=app_user        
+      - DB_PASSWORD=app_password
+      - DB_NAME=juego_educativo
+      - DB_PORT=3306
+    depends_on:
+      - database
+    networks:
+      - app_network
+
+  # 3. Frontend Ionic
+  ionic_frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: app_ionic
+    restart: unless-stopped
+    ports:
+      - "8100:8100"
+      - "5000:5000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+volumes:
+  mariadb_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge

@@ -1,0 +1,132 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Dashboard del Docente</ion-title>
+    <ion-buttons slot="end">
+      <ion-button color="light" (click)="cerrarSesion()">Cerrar Sesión</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Selector de Pestaña -->
+  <ion-segment [(ngModel)]="pestana" color="primary">
+    <ion-segment-button value="grupos">Mis Grupos</ion-segment-button>
+    <ion-segment-button value="crear_actividad">Crear Juego Word Connect</ion-segment-button>
+    <ion-segment-button value="analitica">Reporte de Alumnos</ion-segment-button>
+  </ion-segment>
+
+  <!-- PESTAÑA 1: GESTIÓN DE GRUPOS -->
+  <div *ngIf="pestana === 'grupos'" style="margin-top: 20px;">
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="5">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title>Crear Nuevo Grupo</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-item>
+                <ion-label position="stacked">Nombre del Grupo</ion-label>
+                <ion-input [(ngModel)]="nuevoGrupo.nombre" placeholder="Ej: Biología - 3º A"></ion-input>
+              </ion-item>
+
+              <ion-item>
+                <ion-label position="stacked">Descripción</ion-label>
+                <ion-textarea [(ngModel)]="nuevoGrupo.descripcion" placeholder="Células y ecosistemas"></ion-textarea>
+              </ion-item>
+              <br />
+              <ion-button expand="block" color="success" (click)="crearGrupo()">
+                Generar Grupo y Código
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+
+        <ion-col size="12" size-md="7">
+          <h3>Grupos Activos</h3>
+          <ion-card *ngFor="let g of grupos">
+            <ion-card-header>
+              <ion-card-title>{{ g.nombre }}</ion-card-title>
+              <p>{{ g.descripcion }}</p>
+            </ion-card-header>
+            <ion-card-content>
+              <p><strong>Código de Invitación:</strong> 
+                <ion-badge color="tertiary" style="font-size: 1.1em; margin-left: 10px;">
+                  {{ g.codigo_invitacion }}
+                </ion-badge>
+              </p>
+              <p><strong>Alumnos Inscritos:</strong> {{ g.total_alumnos }}</p>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </div>
+
+  <!-- PESTAÑA 2: CONFIGURACIÓN DEL VIDEOJUEGO -->
+  <div *ngIf="pestana === 'crear_actividad'" style="margin-top: 20px; max-width: 600px; margin: 0 auto;">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Configurar Nivel para "Word Connect"</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="stacked">Seleccionar Grupo</ion-label>
+          <select [(ngModel)]="nuevaActividad.grupo_id" style="width: 100%; padding: 10px; margin-top: 5px;">
+            <option *ngFor="let g of grupos" [value]="g.id">{{ g.nombre }}</option>
+          </select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Título del Tema</ion-label>
+          <ion-input [(ngModel)]="nuevaActividad.titulo" placeholder="Ej: El Sistema Solar"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Instrucciones</ion-label>
+          <ion-input [(ngModel)]="nuevaActividad.instrucciones" placeholder="Encuentra las palabras clave"></ion-input>
+        </ion-item>
+
+        <h4 style="margin-top: 20px;">Palabras Clave y Pistas Conceptuales</h4>
+        <div *ngFor="let p of nuevaActividad.palabras; let i = index" style="background: #f0f0f0; padding: 10px; margin-bottom: 10px; border-radius: 8px;">
+          <p><strong>Palabra #{{ i + 1 }}</strong></p>
+          <ion-input [(ngModel)]="p.palabra" placeholder="Ej: PLANETA"></ion-input>
+          <ion-input [(ngModel)]="p.pista" placeholder="Pista: Cuerpo celeste que gira en órbita"></ion-input>
+        </div>
+
+        <ion-button fill="outline" expand="block" (click)="agregarCampoPalabra()">+ Agregar Otra Palabra</ion-button>
+        <br />
+        <ion-button expand="block" color="primary" (click)="guardarActividad()">Guardar Nivel de Juego</ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- PESTAÑA 3: ANALÍTICA DE ALUMNOS -->
+  <div *ngIf="pestana === 'analitica'" style="margin-top: 20px;">
+    <h3>Métricas de Desempeño del Alumnado</h3>
+    <ion-item>
+      <ion-label position="stacked">Filtrar por Grupo</ion-label>
+      <select (change)="cargarAnalitica($event)" style="width: 100%; padding: 10px; margin-top: 5px;">
+        <option value="">-- Seleccionar Grupo --</option>
+        <option *ngFor="let g of grupos" [value]="g.id">{{ g.nombre }}</option>
+      </select>
+    </ion-item>
+
+    <ion-card *ngFor="let res of reporte">
+      <ion-card-header>
+        <ion-card-title>{{ res.alumno_nombre }} {{ res.alumno_apellido }}</ion-card-title>
+        <p><strong>Actividad:</strong> {{ res.actividad }}</p>
+      </ion-card-header>
+      <ion-card-content>
+        <p><strong>Puntaje Obtenido:</strong> {{ res.puntaje_total }} pts</p>
+        <p><strong>Palabras Encontradas:</strong> {{ res.palabras_encontradas }}</p>
+        <p><strong>Tiempo de Resolución:</strong> {{ res.tiempo_segundos }} segundos</p>
+        <p><strong>Estado:</strong> 
+          <ion-badge [color]="res.completado ? 'success' : 'warning'">
+            {{ res.completado ? 'COMPLETADO' : 'EN PROGRESO' }}
+          </ion-badge>
+        </p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

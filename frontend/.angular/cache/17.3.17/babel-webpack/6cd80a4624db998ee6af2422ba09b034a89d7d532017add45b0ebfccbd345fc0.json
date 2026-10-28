@@ -1,0 +1,1 @@
+{"ast":null,"code":"import { provideIonicAngular } from '@ionic/angular/standalone';\nexport const appConfig = {\n  providers: [provideIonicAngular()]\n};","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}
