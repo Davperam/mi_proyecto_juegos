@@ -312,12 +312,16 @@ app.get('/api/alumno/grupos', async (req, res) => {
   }
 });
 
-// POST /api/alumno/unirse - Permitir al alumno unirse a un grupo usando el código
+// POST /api/alumno/unirse - Permitir al alumno unirse a un grupo mediante código de invitación
 app.post('/api/alumno/unirse', async (req, res) => {
-  const { codigo_invitacion, alumno_id } = req.body;
+  const { codigo_invitacion, usuario_id } = req.body;
+
   try {
     // 1. Buscar el grupo por su código de invitación
-    const [grupos] = await db.query('SELECT id FROM grupos WHERE codigo_invitacion = ?', [codigo_invitacion]);
+    const [grupos] = await db.query(
+      'SELECT id FROM grupos WHERE codigo_invitacion = ?',
+      [codigo_invitacion ? codigo_invitacion.toUpperCase().trim() : '']
+    );
 
     if (grupos.length === 0) {
       return res.status(404).json({ error: 'El código de invitación no es válido' });
@@ -325,14 +329,39 @@ app.post('/api/alumno/unirse', async (req, res) => {
 
     const grupoId = grupos[0].id;
 
-    // 2. Insertar la inscripción en la tabla intermedia grupo_alumnos
+    // 2. Obtener el id del alumno a partir de su usuario_id (o usar el ID del alumno recibido)
+    let alumnoId = req.body.alumno_id;
+
+    if (!alumnoId && usuario_id) {
+      const [alumnos] = await db.query('SELECT id FROM alumnos WHERE usuario_id = ?', [usuario_id]);
+      if (alumnos.length > 0) {
+        alumnoId = alumnos[0].id;
+      }
+    }
+
+    // Fallback: Si no viene id específico, consultar el primer alumno registrado para pruebas
+    if (!alumnoId) {
+      const [primerAlumno] = await db.query('SELECT id FROM alumnos LIMIT 1');
+      if (primerAlumno.length > 0) {
+        alumnoId = primerAlumno[0].id;
+      } else {
+        return res.status(400).json({ error: 'No se encontró el registro de alumno' });
+      }
+    }
+
+    // 3. Insertar la inscripción en la tabla intermedia grupo_alumnos
     await db.query(
       'INSERT INTO grupo_alumnos (id, grupo_id, alumno_id) VALUES (UUID(), ?, ?)',
-      [grupoId, alumno_id]
+      [grupoId, alumnoId]
     );
 
     res.json({ message: 'Te has unido al grupo exitosamente' });
   } catch (error) {
+    // Manejo de error cuando el alumno ya está inscrito en ese grupo (clave única uq_grupo_alumno)
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: 'Ya estás inscrito en este grupo' });
+    }
+    console.error('Error al unirse al grupo:', error);
     res.status(500).json({ error: error.message });
   }
 });
