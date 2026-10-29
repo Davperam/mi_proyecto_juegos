@@ -25,6 +25,14 @@ export const routes: Routes = [
     path: 'juego',
     loadComponent: () => import('./pages/juego/juego.page').then(m => m.JuegoPage)
   },
+  { 
+    path: 'juego-memorama', 
+    loadComponent: () => import('./pages/juego-memorama/juego-memorama.page').then(m => m.JuegoMemoramaPage) 
+  },
+  { 
+    path: 'juego-ahorcado', 
+    loadComponent: () => import('./pages/juego-ahorcado/juego-ahorcado.page').then(m => m.JuegoAhorcadoPage) 
+  },
 
   // 3. Captura de rutas no encontradas
   {

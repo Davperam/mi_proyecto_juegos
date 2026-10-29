@@ -1,0 +1,50 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button color="light" (click)="regresar($event)">
+        ← REGRESAR
+      </ion-button>
+    </ion-buttons>
+    <ion-title>🔤 Ahorcado Educativo</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="juego-content ion-padding">
+  <!-- ENCABEZADO -->
+  <div class="header-juego">
+    <div class="indicador-tiempo">
+      ⏰ Tiempo: <span class="texto-destacado texto-tiempo">{{ tiempoFormateado }}</span>
+    </div>
+    <div class="indicador-puntos">
+      ⭐ Puntos: <span class="texto-destacado texto-puntos">{{ puntajeTotal }}</span>
+    </div>
+  </div>
+
+  <!-- PISTA -->
+  <div class="tarjeta-pista ion-margin-top">
+    <div class="titulo-pista">💡 Pista Concepto:</div>
+    <div class="texto-pista">{{ palabraActual?.pista_concepto }}</div>
+  </div>
+
+  <!-- CASILLAS DE LA PALABRA -->
+  <div class="contenedor-palabra ion-margin-vertical">
+    <span *ngFor="let letra of palabraOculta" class="casilla-ahorcado">
+      {{ letra }}
+    </span>
+  </div>
+
+  <p class="ion-text-center" style="color: #ff4d4d; font-weight: bold;">
+    Intentos Fallidos Restantes: {{ maxIntentos - intentosFallidos }}
+  </p>
+
+  <!-- TECLADO EN PANTALLA -->
+  <div class="teclado-grid">
+    <button 
+      *ngFor="let letra of abecedario" 
+      class="boton-letra" 
+      [disabled]="letrasUsadas.has(letra)"
+      (click)="presionarLetra(letra)">
+      {{ letra }}
+    </button>
+  </div>
+</ion-content>

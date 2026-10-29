@@ -1,80 +1,102 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import {
-  IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
-  IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonItem,
-  IonLabel, IonInput, IonBadge, IonGrid, IonRow, IonCol, IonList
+import { 
+  IonContent, IonHeader, IonToolbar, IonTitle, IonCard, 
+  IonCardHeader, IonCardTitle, IonCardContent, IonButton, 
+  IonItem, IonLabel, IonInput, IonList, IonButtons, IonBadge,
+  IonGrid, IonRow, IonCol // <--- Importaciones agregadas para resolver NG8001
 } from '@ionic/angular/standalone';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-alumno',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, IonContent, IonHeader, IonToolbar,
-    IonTitle, IonButtons, IonButton, IonCard, IonCardHeader,
-    IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput,
-    IonBadge, IonGrid, IonRow, IonCol, IonList
+    CommonModule, FormsModule, IonContent, IonHeader, 
+    IonToolbar, IonTitle, IonCard, IonCardHeader, 
+    IonCardTitle, IonCardContent, IonButton, IonItem, 
+    IonLabel, IonInput, IonList, IonButtons, IonBadge,
+    IonGrid, IonRow, IonCol // <--- Añadidos al arreglo de imports
   ],
   templateUrl: './alumno.page.html'
 })
 export class AlumnoPage implements OnInit {
-  codigoInvitacion = '';
-  misGrupos: any[] = [];
+  codigoInvitacion: string = '';
+  
+  // Propiedad 'grupos' utilizada para la lista
+  grupos: any[] = [];
   actividades: any[] = [];
-  grupoSeleccionadoId: string | null = null;
 
-  private apiUrl = 'http://localhost:3000/api/alumno';
-
-  constructor(private http: HttpClient, private router: Router) { }
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
-    this.obtenerMisGrupos();
+    this.cargarMisGrupos();
   }
 
-  obtenerMisGrupos() {
-    this.http.get<any[]>(`${this.apiUrl}/mis-grupos`).subscribe(data => {
-      this.misGrupos = data;
+  cargarMisGrupos() {
+    this.apiService.getGruposAlumno().subscribe({
+      next: (data) => { this.grupos = data; },
+      error: (err) => console.error('Error cargando grupos:', err)
     });
   }
 
-  unirseAGrupo() {
-    if (!this.codigoInvitacion) return;
+  unirseAGrupo(event?: Event) {
+    if (event && event.target) {
+      (event.target as HTMLElement).blur();
+    }
 
-    this.http.post(`${this.apiUrl}/unirse-grupo`, { codigo_invitacion: this.codigoInvitacion }).subscribe({
-      next: (res: any) => {
-        alert(res.message);
+    if (!this.codigoInvitacion) {
+      alert('Ingresa un código de invitación');
+      return;
+    }
+
+    this.apiService.unirseAGrupo(this.codigoInvitacion).subscribe({
+      next: () => {
+        alert('¡Te has unido al grupo exitosamente!');
         this.codigoInvitacion = '';
-        this.obtenerMisGrupos();
+        this.cargarMisGrupos();
       },
-      error: (err) => {
-        alert(err.error?.error || 'Error al unirse al grupo');
-      }
+      error: (err) => console.error('Error uniéndose al grupo:', err)
     });
   }
 
   cargarActividades(grupoId: string) {
-    this.grupoSeleccionadoId = grupoId;
-    this.http.get<any[]>(`${this.apiUrl}/actividades/${grupoId}`).subscribe(data => {
-      this.actividades = data;
+    this.apiService.getActividadesGrupo(grupoId).subscribe({
+      next: (data) => {
+        this.actividades = data;
+      },
+      error: (err) => console.error('Error cargando actividades:', err)
     });
   }
 
-  iniciarJuego(actividadId: string, event?: Event) {
-    // 1. Quitar el foco del botón presionado para evitar el warning de aria-hidden
+  jugarActividad(actividad: any, event?: Event) {
     if (event && event.target) {
       (event.target as HTMLElement).blur();
-    } else if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
     }
 
-    // 2. Navegar a la pantalla del videojuego Word Connect
-    this.router.navigate(['/juego'], { queryParams: { id: actividadId } });
+    switch (actividad.tipo_juego) {
+      case 'MEMORAMA':
+        this.router.navigate(['/juego-memorama'], { queryParams: { id: actividad.id } });
+        break;
+      case 'AHORCADO':
+        this.router.navigate(['/juego-ahorcado'], { queryParams: { id: actividad.id } });
+        break;
+      case 'WORD_CONNECT':
+      default:
+        this.router.navigate(['/juego'], { queryParams: { id: actividad.id } });
+        break;
+    }
   }
 
-  cerrarSesion() {
+  cerrarSesion(event?: Event) {
+    if (event && event.target) {
+      (event.target as HTMLElement).blur();
+    }
     this.router.navigate(['/login']);
   }
 }

@@ -33,7 +33,7 @@ export interface Palabra {
 export class ApiService {
   private apiUrl = 'http://localhost:3000/api';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getGruposMaestro(): Observable<Grupo[]> {
     return this.http.get<Grupo[]>(`${this.apiUrl}/maestro/grupos`);
@@ -47,11 +47,12 @@ export class ApiService {
   }
 
   // MÉTODO QUE FALTABA EN EL SERVICIO
-  crearActividad(grupo_id: string, titulo: string, instrucciones: string, palabras: Palabra[]): Observable<any> {
-    return this.http.post(`${this.apiUrl}/maestro/actividades`, {
+  crearActividad(grupo_id: string, titulo: string, instrucciones: string, tipo_juego: string, palabras: Palabra[]) {
+    return this.http.post(`${this.apiUrl}/maestro/actividad`, {
       grupo_id,
       titulo,
       instrucciones,
+      tipo_juego,
       palabras
     });
   }
@@ -67,4 +68,29 @@ export class ApiService {
   guardarResultadoJuego(datos: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/juego/guardar-resultado`, datos);
   }
+
+  // En api.service.ts
+
+  // Obtener los grupos a los que pertenece el alumno
+  getGruposAlumno(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/alumno/grupos`);
+  }
+
+  // Unirse a un grupo mediante código de invitación
+  unirseAGrupo(codigo_invitacion: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/alumno/unirse`, { codigo_invitacion });
+  }
+
+  // Obtener actividades asignadas al grupo
+  getActividadesGrupo(grupoId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/alumno/actividades/${grupoId}`);
+  }
+
+  // En api.service.ts
+
+  // Método para consultar los resultados y reporte de alumnos por grupo
+  getReporteGrupo(grupoId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/maestro/reporte/${grupoId}`);
+  }
+
 }

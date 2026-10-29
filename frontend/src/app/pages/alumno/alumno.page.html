@@ -1,8 +1,10 @@
 <ion-header>
-  <ion-toolbar color="secondary">
-    <ion-title>Portal del Estudiante</ion-title>
+  <ion-toolbar color="primary">
+    <ion-title>Panel del Estudiante</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="cerrarSesion()">Cerrar Sesión</ion-button>
+      <ion-button color="light" (click)="cerrarSesion($event)">
+        CERRAR SESIÓN
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -10,73 +12,85 @@
 <ion-content class="ion-padding">
   <ion-grid>
     <ion-row>
-      <!-- TARJETA: UNIRSE A CLASE -->
+      <!-- Unirse a un Grupo por Código -->
       <ion-col size="12" size-md="5">
-        <ion-card color="light">
+        <ion-card>
           <ion-card-header>
-            <ion-card-title color="primary">Unirse a un Grupo</ion-card-title>
+            <ion-card-title>Unirse a un Grupo</ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <p>Ingresa el código alfanumérico proporcionado por tu profesor (ej: BIO-3A99):</p>
             <ion-item>
-              <ion-label position="stacked">Código de Invitación</ion-label>
               <ion-input 
                 label="Código de Invitación" 
                 labelPlacement="stacked" 
-                placeholder="BIO-3A99" 
-                [(ngModel)]="codigoInvitacion" 
+                placeholder="Ej: BIO-3A99" 
+                [(ngModel)]="codigoInvitacion"
                 style="text-transform: uppercase;">
               </ion-input>
             </ion-item>
-            <br />
-            <ion-button expand="block" color="secondary" (click)="unirseAGrupo()">
-              Unirme a la Clase
+
+            <ion-button 
+              expand="block" 
+              color="primary" 
+              class="ion-margin-top" 
+              (click)="unirseAGrupo($event)">
+              UNIRSE AL GRUPO
             </ion-button>
           </ion-card-content>
         </ion-card>
       </ion-col>
 
-      <!-- LISTA DE CLASES Y JUEGOS DISPONIBLES -->
+      <!-- Mis Grupos Inscritos -->
       <ion-col size="12" size-md="7">
-        <h3>Mis Clases Inscritas</h3>
+        <h2>Mis Grupos Inscritos</h2>
         
-        <div *ngIf="misGrupos.length === 0">
-          <p>Aún no te has unido a ninguna clase. ¡Usa tu código para empezar!</p>
+        <!-- Cambiar 'misGrupos' por 'grupos' -->
+        <div *ngIf="grupos.length === 0">
+          <p>No estás inscrito en ningún grupo actualmente.</p>
         </div>
 
-        <ion-card *ngFor="let grupo of misGrupos">
+        <ion-card *ngFor="let grupo of grupos" class="ion-margin-bottom">
           <ion-card-header>
             <ion-card-title>{{ grupo.nombre }}</ion-card-title>
-            <p><strong>Profesor:</strong> {{ grupo.maestro_nombre }} {{ grupo.maestro_apellido }}</p>
-            <p>{{ grupo.descripcion }}</p>
           </ion-card-header>
           <ion-card-content>
-            <ion-button fill="outline" size="small" (click)="cargarActividades(grupo.id)">
-              Ver Actividades de Juego
-            </ion-button>
+            <p><strong>Profesor:</strong> {{ grupo.maestro_nombre }} {{ grupo.maestro_apellido }}</p>
+            <p>{{ grupo.descripcion || 'Sin descripción' }}</p>
 
-            <!-- LISTADO DE ACTIVIDADES / JUEGOS DEL GRUPO -->
-            <div *ngIf="grupoSeleccionadoId === grupo.id" style="margin-top: 15px; background: #fff; padding: 10px; border-radius: 8px;">
-              <h4>Juegos Disponibles:</h4>
-              <ion-list *ngFor="let act of actividades">
-                <div style="border-bottom: 1px solid #ddd; padding: 10px 0;">
-                  <p><strong>{{ act.titulo }}</strong></p>
-                  <p><small>{{ act.instrucciones }}</small></p>
-                  <p *ngIf="act.completado">
-                    <ion-badge color="success">Completado - {{ act.puntaje_total }} pts</ion-badge>
-                  </p>
-                  <ion-button 
-                    size="small" 
-                    [color]="act.completado ? 'tertiary' : 'success'"
-                    (click)="iniciarJuego(act.actividad_id)"
-                  >
-                    {{ act.completado ? 'Volver a Jugar' : 'Jugar Word Connect' }}
-                  </ion-button>
-                </div>
-              </ion-list>
-            </div>
+            <ion-button 
+              fill="outline" 
+              size="small" 
+              class="ion-margin-top" 
+              (click)="cargarActividades(grupo.id)">
+              VER ACTIVIDADES DE JUEGO
+            </ion-button>
           </ion-card-content>
         </ion-card>
+
+        <!-- Lista de Actividades Disponibles -->
+        <div *ngIf="actividades.length > 0" class="ion-margin-top">
+          <h3>Juegos Disponibles:</h3>
+          
+          <ion-card *ngFor="let act of actividades" class="ion-margin-bottom">
+            <ion-card-header>
+              <ion-card-title>{{ act.titulo }}</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <p>{{ act.instrucciones || 'Sin instrucciones adicionales' }}</p>
+
+              <ion-button 
+                expand="block" 
+                color="success" 
+                class="ion-margin-top" 
+                (click)="jugarActividad(act, $event)">
+                
+                <span *ngIf="act.tipo_juego === 'MEMORAMA'">🃏 JUGAR MEMORAMA</span>
+                <span *ngIf="act.tipo_juego === 'AHORCADO'">🔤 JUGAR AHORCADO</span>
+                <span *ngIf="!act.tipo_juego || act.tipo_juego === 'WORD_CONNECT'">🔤 JUGAR WORD CONNECT</span>
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+        </div>
       </ion-col>
     </ion-row>
   </ion-grid>

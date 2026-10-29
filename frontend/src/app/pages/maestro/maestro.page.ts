@@ -7,7 +7,7 @@ import {
   IonCardHeader, IonCardTitle, IonCardContent, IonButton, 
   IonItem, IonLabel, IonInput, IonList, IonButtons, IonBadge, 
   IonSelect, IonSelectOption, IonTextarea, IonCol, IonRow,
-  IonSegment, IonSegmentButton, IonGrid // <--- Componentes agregados
+  IonSegment, IonSegmentButton, IonGrid 
 } from '@ionic/angular/standalone';
 import { ApiService, Grupo, Palabra } from '../../services/api.service';
 
@@ -20,25 +20,26 @@ import { ApiService, Grupo, Palabra } from '../../services/api.service';
     IonCardTitle, IonCardContent, IonButton, IonItem, 
     IonLabel, IonInput, IonList, IonButtons, IonBadge, 
     IonSelect, IonSelectOption, IonTextarea, IonCol, IonRow,
-    IonSegment, IonSegmentButton, IonGrid // <--- Registrados para el template HTML
+    IonSegment, IonSegmentButton, IonGrid
   ],
   templateUrl: './maestro.page.html'
 })
 export class MaestroPage implements OnInit {
   grupos: Grupo[] = [];
+  reporte: any[] = [];
+  pestana: string = 'crear_actividad';
 
   nuevoGrupo = {
     nombre: '',
     descripcion: ''
   };
 
-  pestana: string = 'grupos';
-  reporte: any[] = [];
-
+  // 1. AÑADIDO 'tipo_juego' PARA CORREGIR TS2339 EN LA LÍNEA 124
   nuevaActividad = {
     grupo_id: '',
     titulo: '',
     instrucciones: '',
+    tipo_juego: 'WORD_CONNECT', // <--- Propiedad agregada
     palabras: [
       { palabra: '', pista: '', puntos: 10 }
     ] as Palabra[]
@@ -60,12 +61,20 @@ export class MaestroPage implements OnInit {
     });
   }
 
-  crearGrupo() {
-    if (!this.nuevoGrupo.nombre.trim()) return;
+  // 2. PARÁMETRO OPCIONAL event?: Event PARA CORREGIR TS2554 EN LÍNEA 63
+  crearGrupo(event?: Event) {
+    if (event && event.target) {
+      (event.target as HTMLElement).blur();
+    }
+    
+    if (!this.nuevoGrupo.nombre) {
+      alert('Debes ingresar un nombre para el grupo');
+      return;
+    }
 
     this.apiService.crearGrupo(this.nuevoGrupo.nombre, this.nuevoGrupo.descripcion).subscribe({
-      next: (res) => {
-        alert(`¡Grupo creado! Código: ${res.codigo}`);
+      next: () => {
+        alert('¡Grupo creado exitosamente!');
         this.nuevoGrupo = { nombre: '', descripcion: '' };
         this.cargarGrupos();
       },
@@ -73,28 +82,40 @@ export class MaestroPage implements OnInit {
     });
   }
 
-  agregarCampoPalabra() {
+  // 3. PARÁMETRO OPCIONAL event?: Event EN LÍNEA 180
+  agregarCampoPalabra(event?: Event) {
+    if (event && event.target) {
+      (event.target as HTMLElement).blur();
+    }
     this.nuevaActividad.palabras.push({ palabra: '', pista: '', puntos: 10 });
   }
 
-  guardarActividad() {
+  // 4. PARÁMETRO OPCIONAL event?: Event EN LÍNEA 184
+  guardarActividad(event?: Event) {
+    if (event && event.target) {
+      (event.target as HTMLElement).blur();
+    }
+
     if (!this.nuevaActividad.grupo_id || !this.nuevaActividad.titulo) {
       alert('Por favor selecciona un grupo e ingresa un título');
       return;
     }
 
+    // 5. ENVIAR LOS 5 PARÁMETROS REQUERIDOS POR EL API SERVICE (INCLUYENDO TIPO_JUEGO)
     this.apiService.crearActividad(
       this.nuevaActividad.grupo_id,
       this.nuevaActividad.titulo,
       this.nuevaActividad.instrucciones,
+      this.nuevaActividad.tipo_juego, // <--- 5to argumento enviado
       this.nuevaActividad.palabras
     ).subscribe({
-      next: (res) => {
+      next: () => {
         alert('¡Nivel de juego guardado exitosamente!');
         this.nuevaActividad = {
           grupo_id: '',
           titulo: '',
           instrucciones: '',
+          tipo_juego: 'WORD_CONNECT',
           palabras: [{ palabra: '', pista: '', puntos: 10 }]
         };
       },
@@ -103,19 +124,19 @@ export class MaestroPage implements OnInit {
   }
 
   cargarAnalitica(event: any) {
-    const grupoId = event.target.value;
-    if (!grupoId) return;
-
-    this.apiService.getAnalitica(grupoId).subscribe({
-      next: (data) => {
-        this.reporte = data;
-      },
-      error: (err) => console.error('Error cargando analítica:', err)
-    });
+    const grupoId = event.detail.value;
+    if (grupoId) {
+      this.apiService.getReporteGrupo(grupoId).subscribe({
+        next: (data) => { this.reporte = data; },
+        error: (err) => console.error('Error cargando analítica:', err)
+      });
+    }
   }
 
-  // MÉTODO AGREGADO PARA CERRAR SESIÓN
-  cerrarSesion() {
+  cerrarSesion(event?: Event) {
+    if (event && event.target) {
+      (event.target as HTMLElement).blur();
+    }
     this.router.navigate(['/login']);
   }
 }

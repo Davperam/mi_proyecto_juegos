@@ -1,0 +1,65 @@
+.juego-content {
+  --background: #111322;
+  color: #ffffff;
+}
+
+.header-juego {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 20px !important;
+  background-color: #1a1a2e !important;
+  border-radius: 8px;
+}
+
+.indicador-tiempo, .indicador-puntos {
+  color: #ffffff !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+}
+
+.texto-tiempo { color: #00ffcc !important; }
+.texto-puntos { color: #ffd700 !important; }
+
+/* CASILLAS Y TECLADO AHORCADO */
+.contenedor-palabra {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  
+  .casilla-ahorcado {
+    font-size: 1.8rem;
+    font-weight: bold;
+    border-bottom: 3px solid #00ffcc;
+    min-width: 32px;
+    text-align: center;
+    color: #ffffff;
+  }
+}
+
+.teclado-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 500px;
+  margin: 20px auto 0;
+
+  .boton-letra {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: #1e2238;
+    color: #ffffff;
+    border: 1px solid #333854;
+    font-weight: bold;
+    cursor: pointer;
+
+    &:disabled {
+      background: #0d0e17;
+      color: #555;
+      border-color: #222;
+      cursor: not-allowed;
+    }
+  }
+}

@@ -1,0 +1,46 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button color="light" (click)="regresar($event)">
+        ← REGRESAR
+      </ion-button>
+    </ion-buttons>
+    <ion-title>🃏 Memorama Concepta: {{ actividadInfo?.titulo }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="juego-content ion-padding">
+  <!-- ENCABEZADO DE TIEMPO Y PUNTOS -->
+  <div class="header-juego">
+    <div class="indicador-tiempo">
+      ⏰ Tiempo: <span class="texto-destacado texto-tiempo">{{ tiempoFormateado }}</span>
+    </div>
+    <div class="indicador-puntos">
+      ⭐ Puntos: <span class="texto-destacado texto-puntos">{{ puntajeTotal }}</span>
+    </div>
+  </div>
+
+  <p class="ion-text-center ion-margin-top" style="color: #a0a0a0;">
+    Encuentra la pareja correcta seleccionando una palabra y su pista correspondiente.
+  </p>
+
+  <!-- TABLERO DE CARTAS MEMORAMA -->
+  <div class="grid-memorama">
+    <div 
+      *ngFor="let carta of cartas; let i = index" 
+      class="carta-memorama" 
+      [class.volteada]="carta.volteada || carta.emparejada"
+      [class.emparejada]="carta.emparejada"
+      (click)="voltearCarta(i)">
+      
+      <div class="contenido-carta">
+        <span *ngIf="carta.volteada || carta.emparejada" class="texto-carta">
+          {{ carta.texto }}
+        </span>
+        <span *ngIf="!carta.volteada && !carta.emparejada" class="icono-reverso">
+          ❓
+        </span>
+      </div>
+    </div>
+  </div>
+</ion-content>

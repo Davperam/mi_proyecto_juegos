@@ -1,0 +1,72 @@
+.juego-content {
+  --background: #111322;
+  color: #ffffff;
+}
+
+.header-juego {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 12px 20px !important;
+  background-color: #1a1a2e !important;
+  border-radius: 8px;
+}
+
+.indicador-tiempo, .indicador-puntos {
+  color: #ffffff !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+}
+
+.texto-tiempo { color: #00ffcc !important; }
+.texto-puntos { color: #ffd700 !important; }
+
+/* REJILLA Y CARTAS */
+.grid-memorama {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.carta-memorama {
+  height: 120px;
+  background: #1e2238;
+  border: 2px solid #333854;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.3s, border-color 0.3s;
+  user-select: none;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: #00ffcc;
+  }
+
+  &.volteada {
+    background: #2a2f4c;
+    border-color: #ffd700;
+  }
+
+  &.emparejada {
+    background: #1b4332;
+    border-color: #2ec4b6;
+    opacity: 0.8;
+    cursor: default;
+  }
+}
+
+.texto-carta {
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+}
+
+.icono-reverso {
+  font-size: 2rem;
+}

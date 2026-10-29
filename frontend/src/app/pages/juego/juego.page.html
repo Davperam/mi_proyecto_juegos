@@ -1,7 +1,7 @@
 <ion-header>
   <ion-toolbar color="tertiary">
     <ion-buttons slot="start">
-      <ion-button (click)="regresar()">← Regresar</ion-button>
+      <ion-button color="light" (click)="regresar()">Regresar</ion-button>
     </ion-buttons>
     <ion-title>{{ actividadInfo?.titulo || 'Word Connect' }}</ion-title>
   </ion-toolbar>
@@ -11,10 +11,14 @@
   <div style="max-width: 600px; margin: 0 auto; text-align: center;">
 
     <!-- PANEL DE TIEMPO Y PUNTAJE -->
-    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold;">
-      <div>⏱️ Tiempo: {{ tiempoFormateado }}</div>
-      <div>⭐ Puntos: {{ puntajeActual }}</div>
-    </div>
+     <ion-card style="background: #2b2b40; color: #fff; margin-bottom: 20px;">
+      <ion-card-content style="font-size: 1rem;">
+        <div style="display: flex; justify-content: space-between;">
+          <div>⏱️ Tiempo: {{ tiempoFormateado }}</div>
+          <div>⭐ Puntos: {{ puntajeActual }}</div>
+        </div>
+      </ion-card-content>
+    </ion-card>
 
     <!-- PISTA CONCEPTUAL DEL TEMA -->
     <ion-card style="background: #2b2b40; color: #fff; margin-bottom: 20px;">

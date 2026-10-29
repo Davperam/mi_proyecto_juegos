@@ -7,39 +7,28 @@
   <ion-card-content>
     <!-- 1. Campo de Correo Electrónico -->
     <ion-item>
-      <ion-input 
-        label="Correo Electrónico" 
-        labelPlacement="stacked" 
-        type="email" 
-        placeholder="usuario@escuela.edu" 
+      <ion-input label="Correo Electrónico" labelPlacement="stacked" type="email" placeholder="usuario@escuela.edu"
         [(ngModel)]="email">
       </ion-input>
     </ion-item>
 
     <!-- 2. Campo de Contraseña -->
     <ion-item>
-      <ion-input 
-        label="Contraseña" 
-        labelPlacement="stacked" 
-        type="password" 
-        placeholder="••••••••" 
+      <ion-input label="Contraseña" labelPlacement="stacked" type="password" placeholder="••••••••"
         [(ngModel)]="password">
       </ion-input>
     </ion-item>
 
     <!-- 3. Selector de Rol (Maestro / Alumno) -->
     <ion-item>
-      <ion-select 
-        label="Ingresar como" 
-        labelPlacement="stacked" 
-        [(ngModel)]="rolSelected">
+      <ion-select label="Ingresar como" labelPlacement="stacked" [(ngModel)]="rolSelected">
         <ion-select-option value="maestro">Maestro / Profesor</ion-select-option>
         <ion-select-option value="alumno">Alumno / Estudiante</ion-select-option>
       </ion-select>
     </ion-item>
 
     <!-- 4. Botón de Iniciar Sesión -->
-    <ion-button expand="block" color="primary" class="ion-margin-top" (click)="iniciarSesion()">
+    <ion-button expand="block" color="primary" class="ion-margin-top" (click)="iniciarSesion($event)">
       INICIAR SESIÓN
     </ion-button>
   </ion-card-content>

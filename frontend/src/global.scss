@@ -1,4 +1,10 @@
 /* Estilos globales de la aplicación Ionic */
+
+/* Configuración explícita de lectura de izquierda a derecha (LTR) */
+html {
+  dir: ltr;
+}
+
 @import "@ionic/angular/css/core.css";
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";

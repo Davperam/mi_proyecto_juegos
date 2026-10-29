@@ -37,6 +37,7 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
   puntajeActual = 0;
   tiempoSegundos = 0;
   tiempoFormateado = '00:00';
+  puntajeTotal: number = 0;
   timerInterval: any;
   juegoCompletado = false;
 

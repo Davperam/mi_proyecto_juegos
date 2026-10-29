@@ -69,34 +69,30 @@ app.post('/api/maestro/grupos', async (req, res) => {
 });
 
 // POST /api/maestro/actividades - Crear una nueva actividad con palabras clave
-app.post('/api/maestro/actividades', async (req, res) => {
-  const { grupo_id, titulo, instrucciones, palabras } = req.body;
-  const connection = await db.getConnection();
+app.post('/api/maestro/actividad', async (req, res) => {
+  const { grupo_id, titulo, instrucciones, tipo_juego, palabras } = req.body;
   try {
-    await connection.beginTransaction();
+    const actividadId = require('crypto').randomUUID();
 
-    const actId = require('crypto').randomUUID();
-    await connection.query(
-      'INSERT INTO actividades (id, grupo_id, titulo, instrucciones) VALUES (?, ?, ?, ?)',
-      [actId, grupo_id, titulo, instrucciones]
+    // Insertar actividad con el tipo de juego
+    await db.query(
+      'INSERT INTO actividades (id, grupo_id, titulo, instrucciones, tipo_juego) VALUES (?, ?, ?, ?, ?)',
+      [actividadId, grupo_id, titulo, instrucciones, tipo_juego || 'WORD_CONNECT']
     );
 
-    if (palabras && palabras.length > 0) {
-      for (const p of palabras) {
-        await connection.query(
+    // Insertar palabras asociadas
+    for (const p of palabras) {
+      if (p.palabra) {
+        await db.query(
           'INSERT INTO palabras_actividad (id, actividad_id, palabra, pista_concepto, puntos) VALUES (UUID(), ?, ?, ?, ?)',
-          [actId, p.palabra.toUpperCase(), p.pista || p.pista_concepto, p.puntos || 10]
+          [actividadId, p.palabra.toUpperCase().trim(), p.pista, p.puntos || 10]
         );
       }
     }
 
-    await connection.commit();
-    res.json({ message: 'Actividad creada con éxito', actividad_id: actId });
+    res.json({ message: 'Actividad creada correctamente', actividadId });
   } catch (error) {
-    await connection.rollback();
     res.status(500).json({ error: error.message });
-  } finally {
-    connection.release();
   }
 });
 
@@ -121,6 +117,34 @@ app.get('/api/maestro/analitica/:grupoId', async (req, res) => {
       WHERE act.grupo_id = ?;
     `;
     const [rows] = await db.query(query, [grupoId]);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// En backend/src/index.js
+
+// GET /api/maestro/reporte/:grupoId - Reporte de resultados de los alumnos
+app.get('/api/maestro/reporte/:grupoId', async (req, res) => {
+  const { grupoId } = req.params;
+  try {
+    const [rows] = await db.query(
+      `SELECT 
+        u.nombre AS alumno_nombre,
+        u.apellido AS alumno_apellido,
+        act.titulo AS actividad,
+        rv.puntaje_total,
+        rv.palabras_encontradas,
+        rv.tiempo_segundos,
+        rv.completado
+      FROM resultados_videojuego rv
+      JOIN actividades act ON rv.actividad_id = act.id
+      JOIN alumnos al ON rv.alumno_id = al.id
+      JOIN usuarios u ON al.usuario_id = u.id
+      WHERE act.grupo_id = ?`,
+      [grupoId]
+    );
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -249,12 +273,38 @@ app.post('/api/alumno/unirse-grupo', async (req, res) => {
 // ==========================================
 
 // 1. GET /api/alumno/actividades/:grupoId - Consultar tareas de un grupo
+// En backend/src/index.js
+
 app.get('/api/alumno/actividades/:grupoId', async (req, res) => {
   const { grupoId } = req.params;
   try {
-    const [rows] = await db.query(
-      'SELECT id, grupo_id, titulo, instrucciones, fecha_limite FROM actividades WHERE grupo_id = ?',
+    const [actividades] = await db.query(
+      'SELECT id, grupo_id, titulo, instrucciones, tipo_juego FROM actividades WHERE grupo_id = ?',
       [grupoId]
+    );
+    res.json(actividades);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/// GET /api/alumno/grupos - Obtener los grupos en los que está inscrito el alumno
+app.get('/api/alumno/grupos', async (req, res) => {
+  try {
+    // Si manejas sesiones/JWT, aquí obtienes el usuario del token.
+    // De forma general, realiza la consulta JOIN entre grupo_alumnos, grupos y usuarios (maestros):
+    const [rows] = await db.query(
+      `SELECT 
+        g.id, 
+        g.nombre, 
+        g.descripcion, 
+        g.codigo_invitacion,
+        u_m.nombre AS maestro_nombre,
+        u_m.apellido AS maestro_apellido
+      FROM grupo_alumnos ga
+      JOIN grupos g ON ga.grupo_id = g.id
+      JOIN maestros m ON g.maestro_id = m.id
+      JOIN usuarios u_m ON m.usuario_id = u_m.id`
     );
     res.json(rows);
   } catch (error) {
@@ -262,49 +312,31 @@ app.get('/api/alumno/actividades/:grupoId', async (req, res) => {
   }
 });
 
-// 2. POST /api/alumno/unirse-grupo - Unirse a un grupo por código de invitación
-app.post('/api/alumno/unirse-grupo', async (req, res) => {
-  const { codigo_invitacion } = req.body;
-  const alumnoId = 'b1111111-1111-1111-1111-111111111111'; // ID fijo de prueba (Sofía López)
-
+// POST /api/alumno/unirse - Permitir al alumno unirse a un grupo usando el código
+app.post('/api/alumno/unirse', async (req, res) => {
+  const { codigo_invitacion, alumno_id } = req.body;
   try {
-    if (!codigo_invitacion) {
-      return res.status(400).json({ error: 'Debes proporcionar un código de invitación' });
-    }
-
-    // Buscar el grupo en MariaDB
-    const [grupos] = await db.query(
-      'SELECT id, nombre FROM grupos WHERE codigo_invitacion = ? AND activo = TRUE',
-      [codigo_invitacion.trim().toUpperCase()]
-    );
+    // 1. Buscar el grupo por su código de invitación
+    const [grupos] = await db.query('SELECT id FROM grupos WHERE codigo_invitacion = ?', [codigo_invitacion]);
 
     if (grupos.length === 0) {
-      return res.status(404).json({ error: 'El código de invitación no existe' });
+      return res.status(404).json({ error: 'El código de invitación no es válido' });
     }
 
     const grupoId = grupos[0].id;
 
-    // Verificar si el alumno ya está inscrito
-    const [existente] = await db.query(
-      'SELECT id FROM grupo_alumnos WHERE grupo_id = ? AND alumno_id = ?',
-      [grupoId, alumnoId]
-    );
-
-    if (existente.length > 0) {
-      return res.status(400).json({ error: 'Ya estás inscrito en este grupo' });
-    }
-
-    // Insertar inscripción en MariaDB
+    // 2. Insertar la inscripción en la tabla intermedia grupo_alumnos
     await db.query(
       'INSERT INTO grupo_alumnos (id, grupo_id, alumno_id) VALUES (UUID(), ?, ?)',
-      [grupoId, alumnoId]
+      [grupoId, alumno_id]
     );
 
-    res.json({ message: `¡Te has unido exitosamente al grupo ${grupos[0].nombre}!`, grupo: grupos[0] });
+    res.json({ message: 'Te has unido al grupo exitosamente' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // 4. Iniciar servidor Express
 const PORT = process.env.PORT || 3000;
