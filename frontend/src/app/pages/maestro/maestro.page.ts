@@ -1,86 +1,120 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { 
-  IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
-  IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonItem,
-  IonLabel, IonInput, IonTextarea, IonBadge, IonGrid, IonRow, IonCol, IonSegment, IonSegmentButton
+  IonContent, IonHeader, IonToolbar, IonTitle, IonCard, 
+  IonCardHeader, IonCardTitle, IonCardContent, IonButton, 
+  IonItem, IonLabel, IonInput, IonList, IonButtons, IonBadge, 
+  IonSelect, IonSelectOption, IonTextarea, IonCol, IonRow,
+  IonSegment, IonSegmentButton, IonGrid // <--- Componentes agregados
 } from '@ionic/angular/standalone';
+import { ApiService, Grupo, Palabra } from '../../services/api.service';
 
 @Component({
   selector: 'app-maestro',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
-    IonTitle, IonButtons, IonButton, IonCard, IonCardHeader, 
-    IonCardTitle, IonCardContent, IonItem, IonLabel, IonInput, 
-    IonTextarea, IonBadge, IonGrid, IonRow, IonCol,
-    IonSegment, IonSegmentButton
+    CommonModule, FormsModule, IonContent, IonHeader, 
+    IonToolbar, IonTitle, IonCard, IonCardHeader, 
+    IonCardTitle, IonCardContent, IonButton, IonItem, 
+    IonLabel, IonInput, IonList, IonButtons, IonBadge, 
+    IonSelect, IonSelectOption, IonTextarea, IonCol, IonRow,
+    IonSegment, IonSegmentButton, IonGrid // <--- Registrados para el template HTML
   ],
   templateUrl: './maestro.page.html'
 })
 export class MaestroPage implements OnInit {
-  pestana = 'grupos';
-  grupos: any[] = [];
+  grupos: Grupo[] = [];
+
+  nuevoGrupo = {
+    nombre: '',
+    descripcion: ''
+  };
+
+  pestana: string = 'grupos';
   reporte: any[] = [];
 
-  nuevoGrupo = { nombre: '', descripcion: '' };
   nuevaActividad = {
     grupo_id: '',
     titulo: '',
     instrucciones: '',
-    palabras: [{ palabra: '', pista: '' }]
+    palabras: [
+      { palabra: '', pista: '', puntos: 10 }
+    ] as Palabra[]
   };
 
-  private apiUrl = 'http://localhost:3000/api/maestro';
-
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) {}
 
   ngOnInit() {
-    this.obtenerGrupos();
+    this.cargarGrupos();
   }
 
-  obtenerGrupos() {
-    this.http.get<any[]>(`${this.apiUrl}/grupos`).subscribe(data => {
-      this.grupos = data;
+  cargarGrupos() {
+    this.apiService.getGruposMaestro().subscribe({
+      next: (data) => { this.grupos = data; },
+      error: (err) => console.error('Error cargando grupos:', err)
     });
   }
 
   crearGrupo() {
-    if (!this.nuevoGrupo.nombre) return;
-    this.http.post(`${this.apiUrl}/grupos`, this.nuevoGrupo).subscribe(() => {
-      this.nuevoGrupo = { nombre: '', descripcion: '' };
-      this.obtenerGrupos();
+    if (!this.nuevoGrupo.nombre.trim()) return;
+
+    this.apiService.crearGrupo(this.nuevoGrupo.nombre, this.nuevoGrupo.descripcion).subscribe({
+      next: (res) => {
+        alert(`¡Grupo creado! Código: ${res.codigo}`);
+        this.nuevoGrupo = { nombre: '', descripcion: '' };
+        this.cargarGrupos();
+      },
+      error: (err) => console.error('Error al crear grupo:', err)
     });
   }
 
   agregarCampoPalabra() {
-    this.nuevaActividad.palabras.push({ palabra: '', pista: '' });
+    this.nuevaActividad.palabras.push({ palabra: '', pista: '', puntos: 10 });
   }
 
   guardarActividad() {
-    if (!this.nuevaActividad.grupo_id || !this.nuevaActividad.titulo) return;
-    this.http.post(`${this.apiUrl}/actividades`, this.nuevaActividad).subscribe(() => {
-      alert('¡Nivel del juego creado exitosamente!');
-      this.nuevaActividad = {
-        grupo_id: '',
-        titulo: '',
-        instrucciones: '',
-        palabras: [{ palabra: '', pista: '' }]
-      };
+    if (!this.nuevaActividad.grupo_id || !this.nuevaActividad.titulo) {
+      alert('Por favor selecciona un grupo e ingresa un título');
+      return;
+    }
+
+    this.apiService.crearActividad(
+      this.nuevaActividad.grupo_id,
+      this.nuevaActividad.titulo,
+      this.nuevaActividad.instrucciones,
+      this.nuevaActividad.palabras
+    ).subscribe({
+      next: (res) => {
+        alert('¡Nivel de juego guardado exitosamente!');
+        this.nuevaActividad = {
+          grupo_id: '',
+          titulo: '',
+          instrucciones: '',
+          palabras: [{ palabra: '', pista: '', puntos: 10 }]
+        };
+      },
+      error: (err) => console.error('Error guardando la actividad:', err)
     });
   }
 
   cargarAnalitica(event: any) {
     const grupoId = event.target.value;
     if (!grupoId) return;
-    this.http.get<any[]>(`${this.apiUrl}/analitica/${grupoId}`).subscribe(data => {
-      this.reporte = data;
+
+    this.apiService.getAnalitica(grupoId).subscribe({
+      next: (data) => {
+        this.reporte = data;
+      },
+      error: (err) => console.error('Error cargando analítica:', err)
     });
   }
 
+  // MÉTODO AGREGADO PARA CERRAR SESIÓN
   cerrarSesion() {
     this.router.navigate(['/login']);
   }

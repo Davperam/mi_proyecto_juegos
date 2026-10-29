@@ -1,0 +1,1 @@
+{"ast":null,"code":"/*!\n * (C) Ionic http://ionicframework.com - MIT License\n */\nimport { N as Note, d as defineCustomElement$1 } from './note.js';\nconst IonNote = Note;\nconst defineCustomElement = defineCustomElement$1;\nexport { IonNote, defineCustomElement };","map":null,"metadata":{},"sourceType":"module","externalDependencies":[]}

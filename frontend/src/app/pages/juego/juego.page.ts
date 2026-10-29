@@ -1,11 +1,11 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { 
-  IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, 
-  IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardContent 
+import {
+  IonContent, IonHeader, IonToolbar, IonTitle, IonButtons,
+  IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardContent
 } from '@ionic/angular/standalone';
-import { MockDataService, Actividad, Palabra } from '../../services/mock-data.service';
+import { ApiService, Actividad, Palabra } from '../../services/api.service';
 
 interface NodoLetra {
   letra: string;
@@ -19,8 +19,8 @@ interface NodoLetra {
   selector: 'app-juego',
   standalone: true,
   imports: [
-    CommonModule, IonContent, IonHeader, IonToolbar, 
-    IonTitle, IonButtons, IonButton, IonCard, IonCardHeader, 
+    CommonModule, IonContent, IonHeader, IonToolbar,
+    IonTitle, IonButtons, IonButton, IonCard, IonCardHeader,
     IonCardTitle, IonCardContent
   ],
   templateUrl: './juego.page.html'
@@ -31,7 +31,7 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
   actividadId = '';
   actividadInfo: Actividad | null = null;
   listaPalabras: (Palabra & { adivinada: boolean })[] = [];
-  
+
   pistaActual = 'Conecta las letras para formar la palabra secreta';
   palabraSeleccionada = '';
   puntajeActual = 0;
@@ -47,10 +47,10 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
   private posMouse = { x: 0, y: 0 };
 
   constructor(
-    private route: ActivatedRoute, 
-    private router: Router, 
-    private mockData: MockDataService
-  ) {}
+    private route: ActivatedRoute,
+    private router: Router,
+    private apiService: ApiService
+  ) { }
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -72,19 +72,27 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   cargarActividad() {
-    this.mockData.getActividadPorId(this.actividadId).subscribe(data => {
-      this.actividadInfo = data;
-      this.listaPalabras = data.palabras.map(p => ({
-        ...p,
-        adivinada: false
-      }));
+    this.apiService.getActividadJuego(this.actividadId).subscribe({
+      next: (res) => {
+        if (res && res.palabras && res.palabras.length > 0) {
+          this.actividadInfo = res.actividad;
+          this.listaPalabras = res.palabras.map(p => ({
+            ...p,
+            adivinada: false
+          }));
 
-      if (this.listaPalabras.length > 0) {
-        this.pistaActual = this.listaPalabras[0].pista_concepto;
+          this.pistaActual = this.listaPalabras[0].pista_concepto || 'Conecta las letras para formar la palabra secreta';
+
+          // Generar la rueda y redibujar el canvas
+          this.generarRuedaDeLetras();
+          this.iniciarCronometro();
+        } else {
+          console.warn('La actividad no tiene palabras registradas en la base de datos');
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando la actividad desde MariaDB:', err);
       }
-
-      this.generarRuedaDeLetras();
-      this.iniciarCronometro();
     });
   }
 
@@ -102,7 +110,6 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
   generarRuedaDeLetras() {
     if (!this.listaPalabras || this.listaPalabras.length === 0) return;
 
-    // 1. Calcular la frecuencia MÁXIMA que requiere cada letra en una sola palabra
     const maxFrecuencias: { [letra: string]: number } = {};
 
     for (const item of this.listaPalabras) {
@@ -113,7 +120,6 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
         conteoLocal[letra] = (conteoLocal[letra] || 0) + 1;
       }
 
-      // Conservar la mayor cantidad de veces que se necesita cada letra
       for (const letra in conteoLocal) {
         if (!maxFrecuencias[letra] || conteoLocal[letra] > maxFrecuencias[letra]) {
           maxFrecuencias[letra] = conteoLocal[letra];
@@ -121,7 +127,6 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
       }
     }
 
-    // 2. Expandir el arreglo de letras de la rueda respetando las repeticiones necesarias
     const bolsaDeLetras: string[] = [];
     for (const letra in maxFrecuencias) {
       const cantidad = maxFrecuencias[letra];
@@ -134,7 +139,6 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
     const centroX = 160;
     const centroY = 160;
 
-    // 3. Ajuste dinámico de dimensiones según la cantidad total de esferas
     let radioRueda = 100;
     let radioNodo = 22;
     let tamanoFuente = 18;
@@ -153,7 +157,6 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
       tamanoFuente = 20;
     }
 
-    // 4. Posicionar cada nodo geométricamente en el círculo
     this.nodos = bolsaDeLetras.map((letra, index) => {
       const angulo = (index * 2 * Math.PI) / totalNodos - Math.PI / 2;
       return {
@@ -174,13 +177,11 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
     if (!this.ctx) return;
     this.ctx.clearRect(0, 0, 320, 320);
 
-    // Fondo rueda
     this.ctx.beginPath();
     this.ctx.arc(160, 160, 125, 0, Math.PI * 2);
     this.ctx.fillStyle = '#2b2b40';
     this.ctx.fill();
 
-    // Líneas
     if (this.caminoSeleccionado.length > 0) {
       this.ctx.beginPath();
       this.ctx.moveTo(this.caminoSeleccionado[0].x, this.caminoSeleccionado[0].y);
@@ -199,13 +200,9 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
       this.ctx.stroke();
     }
 
-    // Nodos
-    // DENTRO DE dibujarCanvas() en juego.page.ts
-
     for (const nodo of this.nodos) {
       const estaSeleccionado = this.caminoSeleccionado.includes(nodo);
 
-      // Dibujar esfera
       this.ctx.beginPath();
       this.ctx.arc(nodo.x, nodo.y, nodo.radio, 0, Math.PI * 2);
       this.ctx.fillStyle = estaSeleccionado ? '#00e676' : '#3f3f5a';
@@ -214,7 +211,6 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
       this.ctx.lineWidth = 2;
       this.ctx.stroke();
 
-      // Dibujar letra con tamaño dinámico
       const fontPx = (this as any).tamanoFuenteRueda || 18;
       this.ctx.fillStyle = estaSeleccionado ? '#000' : '#fff';
       this.ctx.font = `bold ${fontPx}px Arial`;
@@ -307,14 +303,12 @@ export class JuegoPage implements OnInit, AfterViewInit, OnDestroy {
     this.juegoCompletado = true;
     clearInterval(this.timerInterval);
 
-    this.mockData.guardarResultado({
-      alumno_nombre: 'Sofía López',
-      actividad: this.actividadInfo?.titulo || 'Juego Word Connect',
+    this.apiService.guardarResultadoJuego({
+      actividad_id: this.actividadId,
       puntaje_total: this.puntajeActual,
       palabras_encontradas: this.listaPalabras.length,
       tiempo_segundos: this.tiempoSegundos,
-      completado: true,
-      fecha_jugado: new Date().toISOString().split('T')[0]
+      completado: true
     }).subscribe();
   }
 

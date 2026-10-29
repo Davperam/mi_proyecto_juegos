@@ -21,10 +21,12 @@
             <ion-item>
               <ion-label position="stacked">Código de Invitación</ion-label>
               <ion-input 
-                [(ngModel)]="codigoInvitacion" 
+                label="Código de Invitación" 
+                labelPlacement="stacked" 
                 placeholder="BIO-3A99" 
-                style="text-transform: uppercase;"
-              ></ion-input>
+                [(ngModel)]="codigoInvitacion" 
+                style="text-transform: uppercase;">
+              </ion-input>
             </ion-item>
             <br />
             <ion-button expand="block" color="secondary" (click)="unirseAGrupo()">
