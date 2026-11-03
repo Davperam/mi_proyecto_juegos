@@ -1,3 +1,8 @@
+ion-title {
+  font-size: 1.05rem !important;
+  padding-start: 4px !important;
+}
+
 .juego-content {
   --background: #111322;
   color: #ffffff;
@@ -12,14 +17,20 @@
   border-radius: 8px;
 }
 
-.indicador-tiempo, .indicador-puntos {
+.indicador-tiempo,
+.indicador-puntos {
   color: #ffffff !important;
   font-size: 1.1rem !important;
   font-weight: 600 !important;
 }
 
-.texto-tiempo { color: #00ffcc !important; }
-.texto-puntos { color: #ffd700 !important; }
+.texto-tiempo {
+  color: #00ffcc !important;
+}
+
+.texto-puntos {
+  color: #ffd700 !important;
+}
 
 /* REJILLA Y CARTAS */
 .grid-memorama {
@@ -27,6 +38,15 @@
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 16px;
   margin-top: 20px;
+}
+
+.carta-memorama {
+  perspective: 1000px;
+  transition: transform 0.4s ease-in-out, background-color 0.3s;
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .carta-memorama {
@@ -59,14 +79,23 @@
   }
 }
 
-.texto-carta {
-  color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-align: center;
-  padding: 8px;
-}
-
 .icono-reverso {
   font-size: 2rem;
+}
+
+.carta-memorama {
+  min-height: 120px;
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  word-break: break-word; /* Rompe palabras o frases largas */
+}
+
+.texto-carta {
+  color: #ffffff;
+  font-size: 0.85rem !important; /* Tamaño ajustado para lectura de frases */
+  font-weight: 600;
+  line-height: 1.2;
 }

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   IonContent, IonHeader, IonToolbar, IonTitle, IonButtons,
-  IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardContent
+  IonButton, IonCard, IonCardHeader, IonCardTitle, IonCardContent 
 } from '@ionic/angular/standalone';
 import { ApiService, Actividad, Palabra } from '../../services/api.service';
 

@@ -74,23 +74,25 @@ app.post('/api/maestro/actividad', async (req, res) => {
   try {
     const actividadId = require('crypto').randomUUID();
 
-    // Insertar actividad con el tipo de juego
+    // 1. Insertar la actividad principal
     await db.query(
-      'INSERT INTO actividades (id, grupo_id, titulo, instrucciones, tipo_juego) VALUES (?, ?, ?, ?, ?)',
+      `INSERT INTO actividades (id, grupo_id, titulo, instrucciones, tipo_juego) 
+       VALUES (?, ?, ?, ?, ?)`,
       [actividadId, grupo_id, titulo, instrucciones, tipo_juego || 'WORD_CONNECT']
     );
 
-    // Insertar palabras asociadas
-    for (const p of palabras) {
-      if (p.palabra) {
+    // 2. Insertar cada palabra junto con su pista conceptual
+    if (palabras && palabras.length > 0) {
+      for (const p of palabras) {
         await db.query(
-          'INSERT INTO palabras_actividad (id, actividad_id, palabra, pista_concepto, puntos) VALUES (UUID(), ?, ?, ?, ?)',
-          [actividadId, p.palabra.toUpperCase().trim(), p.pista, p.puntos || 10]
+          `INSERT INTO palabras_actividad (id, actividad_id, palabra, pista_concepto, puntos) 
+           VALUES (UUID(), ?, ?, ?, ?)`,
+          [actividadId, p.palabra.toUpperCase().trim(), p.pista || p.pista_concepto, p.puntos || 10]
         );
       }
     }
 
-    res.json({ message: 'Actividad creada correctamente', actividadId });
+    res.json({ message: 'Actividad creada exitosamente', actividad_id: actividadId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -175,6 +177,33 @@ app.get('/api/juego/actividad/:id', async (req, res) => {
     );
 
     res.json({ actividad: actividades[0], palabras });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/juego/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [actividades] = await db.query(
+      'SELECT id, grupo_id, titulo, instrucciones, tipo_juego FROM actividades WHERE id = ?',
+      [id]
+    );
+
+    if (actividades.length === 0) {
+      return res.status(404).json({ error: 'Actividad no encontrada' });
+    }
+
+    // Asegurar la selección explícita del campo pista_concepto
+    const [palabras] = await db.query(
+      'SELECT id, palabra, pista_concepto, puntos FROM palabras_actividad WHERE actividad_id = ?',
+      [id]
+    );
+
+    res.json({
+      actividad: actividades[0],
+      palabras: palabras
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -373,3 +402,32 @@ app.listen(PORT, () => {
   console.log(`API Express corriendo en el puerto ${PORT}`);
 });
 
+// En backend/src/index.js
+
+app.get('/api/actividad/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // 1. Obtener información de la actividad
+    const [actividades] = await db.query(
+      'SELECT id, grupo_id, titulo, instrucciones, tipo_juego FROM actividades WHERE id = ?',
+      [id]
+    );
+
+    if (actividades.length === 0) {
+      return res.status(404).json({ error: 'Actividad no encontrada' });
+    }
+
+    // 2. Obtener las palabras Y PISTAS asociadas
+    const [palabras] = await db.query(
+      'SELECT id, palabra, pista_concepto FROM palabras_actividad WHERE actividad_id = ?',
+      [id]
+    );
+
+    res.json({
+      actividad: actividades[0],
+      palabras: palabras // Debe incluir la propiedad 'pista_concepto'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
